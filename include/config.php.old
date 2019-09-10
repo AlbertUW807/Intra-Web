@@ -1,0 +1,62 @@
+<?php
+
+$servername = "localhost";
+$currency = $_POST["currency"];
+$tanggal = $_POST["tanggal"];
+$dari = $_POST["dari"];
+$nomorVoucher = $_POST["nomorVoucher"];
+$deskripsi = $_POST["deskripsi"];
+$jumlah = $_POST["jumlah"];
+
+if(!empty($currency) || !empty($tanggal) || !empty($dari) || !empty($nomorVoucher) || !empty($deskripsi) || !empty($jumlah)) {
+	$servername = "localhost";
+	$username = "root";
+	$password = "";
+	$dbname = "mutiara_finance";
+
+	// creating the connection
+	$conn = mysqli_connect($servername,$username,$password,$dbname);
+	if (!$conn){
+		die("Connection failed('.mysqli_connect_error().'): ". mysqli_connect_error());
+	} else {
+		// Query for making sure that nomorVoucher has to be a UNIQUE entry
+		$SELECT = "SELECT nomorVoucher FROM mutiara_finance WHERE nomorVoucher = ? Limit 1";
+		// Query for entry of all designated fields into 'permata-finance' database
+		$INSERT = "INSERT into mutiara_finance (currency, tanggal, dari, nomorVoucher, deskripsi, jumlah) values (?, ?, ?, ?, ?, ?)";
+
+		// Prepare statement for Select Query
+		$stmt = $conn->prepare($SELECT);
+
+// ERROR as it might return a false boolean
+
+		$stmt->bind_param("s", $nomorVoucher); // use 's' to replace the '?' in Query as nomorVoucher is declared as VarChar/(String)
+		$stmt->execute();
+		$stmt->bind_result($nomorVoucher);
+		$stmt->store_result();
+		$rnum = $stmt->num_rows; 
+		
+		// if there are no duplicate nomor Vouchers
+		if ($rnum == 0) {
+			$stmt->close();
+
+			// close prepare statement for select query and make insert query
+			$stmt = $conn->Prepare($INSERT);
+			$stmt->bind_param("sssssi", $currency, $tanggal, $dari, $nomorVoucher, $deskripsi, $jumlah);
+			$stmt->execute();
+			echo "New Record Inserted Successfully!";
+		// if there are duplicate nomor Vouchers
+		} else {
+			echo "Someone Already Registered Using this Voucher Number";
+		}
+		// to close the prepare insert query
+		$stmt->close();
+		// to close the database connection
+		$conn->close();
+	}
+
+} else {
+	echo "All fields are required! You have left some fields blank.";
+	die();
+}
+
+?>
